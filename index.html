@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الواجبات اليومية</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 50px;
+        }
+
+        .class-button {
+            background-color: #2980b9;
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .class-button:hover {
+            background-color: #3498db;
+        }
+
+        .back-button {
+            background-color: #95a5a6;
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1rem;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        #schedule-table {
+            width: 90%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        #schedule-table th, #schedule-table td {
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        #schedule-table th {
+            background-color: #27ae60;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        /* تظليل الصف الخاص بأرقام الحصص */
+        #schedule-table th.purple {
+            background-color: #e1bee7; /* لون بنفسجي فاتح */
+        }
+
+        #schedule-table td {
+            background-color: #ecf0f1;
+            transition: background-color 0.3s ease;
+        }
+
+        #schedule-table td:hover {
+            background-color: #bdc3c7;
+        }
+
+        /* تظليل عمود الأيام */
+        #schedule-table .day-column {
+            background-color: #e1bee7; /* لون بنفسجي فاتح */
+        }
+
+        #schedule-table td strong {
+            display: block;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #schedule-table td span {
+            display: block;
+            margin-top: 5px;
+        }
+
+        #schedule-table td span[style*="color:green"] {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        #schedule-table td span[style*="color:red"] {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* نمط العنوان أعلى الجدول */
+        .table-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>الواجبات اليومية</h1>
+    <div class="buttons-container">
+        <button class="class-button" onclick="openClass('first')">الأول المتوسط</button>
+        <button class="class-button" onclick="openClass('second')">الثاني المتوسط</button>
+        <button class="class-button" onclick="openClass('third')">الثالث المتوسط</button>
+    </div>
+
+    <div id="class-page" style="display:none;">
+        <h1 id="class-title"></h1>
+        <div class="buttons-container" id="sections-container"></div>
+        <button class="back-button" onclick="goBack()">رجوع</button>
+    </div>
+
+    <div id="schedule-page" style="display:none;">
+        <h1 id="section-title"></h1>
+        <div class="table-header" id="table-header"></div> <!-- إضافة لعرض العنوان -->
+        <table id="schedule-table"></table>
+        <button class="back-button" onclick="goBackToSections()">رجوع</button>
+        <button id="edit-schedule-button" class="back-button" onclick="enableEditMode()">تعديل الجدول</button>
+    </div>
+
+    <script>
+        let editMode = false;
+        let subjectsData = {};
+
+        function loadSubjects(sectionName) {
+            const savedSubjects = localStorage.getItem('subjectsData');
+            if (savedSubjects) {
+                subjectsData = JSON.parse(savedSubjects);
+            } else {
+                subjectsData = {};
+            }
+
+            if (!subjectsData[sectionName]) {
+                subjectsData[sectionName] = {};
+            }
+        }
+
+        function saveSubjects() {
+            localStorage.setItem('subjectsData', JSON.stringify(subjectsData));
+        }
+
+        function loadHomework() {
+            const homeworkData = localStorage.getItem('homeworkData');
+            return homeworkData ? JSON.parse(homeworkData) : {};
+        }
+
+        function saveHomework(data) {
+            localStorage.setItem('homeworkData', JSON.stringify(data));
+            showMessage('تم حفظ الواجب بنجاح!');
+        }
+
+        function showMessage(message) {
+            alert(message);
+        }
+
+        function openClass(className) {
+            document.querySelector('.buttons-container').style.display = 'none';
+            document.getElementById('class-title').innerText = `الصف ${className === 'first' ? 'الأول المتوسط' : className === 'second' ? 'الثاني المتوسط' : 'الثالث المتوسط'}`;
+            document.getElementById('class-page').style.display = 'block';
+
+            const sections = className === 'first' ? ['الأول/1', 'الأول/2', 'الأول/3']
+                : className === 'second' ? ['الثاني/1', 'الثاني/2', 'الثاني/3']
+                : ['الثالث/1', 'الثالث/2', 'الثالث/3'];
+
+            document.getElementById('sections-container').innerHTML = '';
+            sections.forEach(section => {
+                let button = document.createElement('button');
+                button.className = 'class-button';
+                button.innerText = section;
+                button.onclick = () => openSchedule(section, className);
+                document.getElementById('sections-container').appendChild(button);
+            });
+        }
+
+        function goBack() {
+            document.getElementById('class-page').style.display = 'none';
+            document.querySelector('.buttons-container').style.display = 'block';
+        }
+
+        function openSchedule(sectionName, className) {
+            loadSubjects(sectionName);
+            document.getElementById('class-page').style.display = 'none';
+            document.getElementById('schedule-page').style.display = 'block';
+            document.getElementById('section-title').innerText = `الفصل ${sectionName}`;
+
+            // تعيين اسم الصف والفصل أعلى الجدول
+            const classText = className === 'first' ? 'الأول المتوسط' : className === 'second' ? 'الثاني المتوسط' : 'الثالث المتوسط';
+            document.getElementById('table-header').innerText = `الصف: ${classText} - الفصل: ${sectionName}`;
+
+            generateScheduleTable(sectionName);
+        }
+
+        function generateScheduleTable(sectionName) {
+            const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+            const table = document.getElementById('schedule-table');
+            table.innerHTML = ''; 
+
+            const homeworkData = loadHomework();
+
+            // إنشاء الصف المرقم من 1 إلى 7
+            const headerRow = document.createElement('tr');
+            const emptyCell = document.createElement('th');
+            emptyCell.classList.add('purple');
+            headerRow.appendChild(emptyCell);
+            for (let i = 1; i <= 7; i++) {
+                const periodCell = document.createElement('th');
+                periodCell.classList.add('purple');
+                periodCell.innerText = i;
+                headerRow.appendChild(periodCell);
+            }
+            table.appendChild(headerRow);
+
+            let currentDate = new Date();
+            let currentDayOfWeek = currentDate.getDay();
+            let diff = (currentDayOfWeek > 0) ? currentDayOfWeek : 7;
+
+            days.forEach((day, dayIndex) => {
+                let row = document.createElement('tr');
+                let dayCell = document.createElement('td');
+                dayCell.classList.add('day-column');
+
+                let dayDate = new Date();
+                dayDate.setDate(currentDate.getDate() - diff + dayIndex + 1);
+                let formattedDate = dayDate.toLocaleDateString('ar-SA', { day: 'numeric', month: 'numeric', year: 'numeric' });
+
+                dayCell.innerText = `${day} (${formattedDate})`;
+                row.appendChild(dayCell);
+
+                for (let subjectIndex = 0; subjectIndex < 7; subjectIndex++) {
+                    let cell = document.createElement('td');
+                    const key = `${sectionName}-${dayIndex}-${subjectIndex}`;
+                    const savedHomework = homeworkData[key] || 'لا يوجد واجب';
+                    const homeworkColor = savedHomework === 'لا يوجد واجب' ? 'green' : 'red';
+
+                    if (!subjectsData[sectionName][`${dayIndex}-${subjectIndex}`]) {
+                        subjectsData[sectionName][`${dayIndex}-${subjectIndex}`] = ['رياضيات', 'علوم', 'إسلامية', 'اجتماعيات', 'اسرية', 'بدنية', 'فنية'][subjectIndex];
+                    }
+                    const subject = subjectsData[sectionName][`${dayIndex}-${subjectIndex}`];
+
+                    if (!editMode) {
+                        cell.innerHTML = `<strong>${subject}</strong><br><span style="color:${homeworkColor};">${savedHomework}</span>`;
+                        cell.onclick = function() {
+                            let newTask = prompt('سجل الواجب:');
+                            if (newTask) {
+                                homeworkData[key] = newTask;
+                                saveHomework(homeworkData);
+                                cell.innerHTML = `<strong>${subject}</strong><br><span style="color:red;">${newTask}</span>`;
+                            }
+                        };
+                    } else {
+                        cell.innerHTML = `<input type="text" value="${subject}" data-day="${dayIndex}" data-subject="${subjectIndex}">`;
+                    }
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            });
+        }
+
+        function enableEditMode() {
+            if (!editMode) {
+                editMode = true;
+                document.getElementById('edit-schedule-button').innerText = 'حفظ التعديلات';
+                generateScheduleTable(document.getElementById('section-title').innerText.split(' ')[1]);
+            } else {
+                const inputs = document.querySelectorAll('#schedule-table input');
+                inputs.forEach(input => {
+                    const dayIndex = input.getAttribute('data-day');
+                    const subjectIndex = input.getAttribute('data-subject');
+                    const sectionName = document.getElementById('section-title').innerText.split(' ')[1];
+                    subjectsData[sectionName][`${dayIndex}-${subjectIndex}`] = input.value;
+                });
+                saveSubjects();
+                editMode = false;
+                document.getElementById('edit-schedule-button').innerText = 'تعديل الجدول';
+                generateScheduleTable(document.getElementById('section-title').innerText.split(' ')[1]);
+            }
+        }
+
+        function goBackToSections() {
+            document.getElementById('schedule-page').style.display = 'none';
+            document.getElementById('class-page').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
